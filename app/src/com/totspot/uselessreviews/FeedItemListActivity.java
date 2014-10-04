@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.parse.Parse;
+import com.parse.ParseObject;
+import com.totspot.uselessreviews.adapter.FeedItemListViewAdapter;
 import com.totspot.uselessreviews.data.DataModel;
 
 /**
@@ -27,7 +29,7 @@ import com.totspot.uselessreviews.data.DataModel;
 public class FeedItemListActivity extends Activity
         implements FeedItemListFragment.Callbacks {
 	
-	private static final String LOG_TAG = "FeedImteListActivity";
+	private static final String LOG_TAG = "FeedItemListActivity";
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
@@ -43,6 +45,8 @@ public class FeedItemListActivity extends Activity
         Parse.setLogLevel(Parse.LOG_LEVEL_VERBOSE);
         
         setContentView(R.layout.activity_feeditem_list);
+        FeedItemListFragment listFragment = (FeedItemListFragment) getFragmentManager()
+                .findFragmentById(R.id.feeditem_list);
 
         if (findViewById(R.id.feeditem_detail_container) != null) {
             // The detail container view will be present only in the
@@ -53,9 +57,7 @@ public class FeedItemListActivity extends Activity
 
             // In two-pane mode, list items should be given the
             // 'activated' state when touched.
-            ((FeedItemListFragment) getFragmentManager()
-                    .findFragmentById(R.id.feeditem_list))
-                    .setActivateOnItemClick(true);
+            listFragment.setActivateOnItemClick(true);
         }
         
 //        ParseObject testObject = new ParseObject("TestObject");
@@ -70,7 +72,9 @@ public class FeedItemListActivity extends Activity
 //		});
         
         Log.d(LOG_TAG, "Initializing the data model.");
-        DataModel.getInstance();
+        DataModel dataModel = DataModel.getInstance();
+        dataModel.setListAdapter((FeedItemListViewAdapter) listFragment.getListAdapter());
+        dataModel.refreshFeedItems();
         
         // TODO: If exposing deep links into your app, handle intents here.
     }
@@ -80,13 +84,13 @@ public class FeedItemListActivity extends Activity
      * indicating that the item with the given ID was selected.
      */
     @Override
-    public void onItemSelected(String id) {
+    public void onItemSelected(ParseObject po) {
         if (mTwoPane) {
             // In two-pane mode, show the detail view in this activity by
             // adding or replacing the detail fragment using a
             // fragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putString(FeedItemDetailFragment.ARG_ITEM_ID, id);
+            arguments.putString(FeedItemDetailFragment.ARG_ITEM_ID, po.getObjectId());
             FeedItemDetailFragment fragment = new FeedItemDetailFragment();
             fragment.setArguments(arguments);
             getFragmentManager().beginTransaction()
@@ -97,7 +101,7 @@ public class FeedItemListActivity extends Activity
             // In single-pane mode, simply start the detail activity
             // for the selected item ID.
             Intent detailIntent = new Intent(this, FeedItemDetailActivity.class);
-            detailIntent.putExtra(FeedItemDetailFragment.ARG_ITEM_ID, id);
+            detailIntent.putExtra(FeedItemDetailFragment.ARG_ITEM_ID, po.getObjectId());
             startActivity(detailIntent);
         }
     }

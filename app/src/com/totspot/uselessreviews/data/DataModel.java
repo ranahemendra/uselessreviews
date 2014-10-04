@@ -7,10 +7,10 @@ import android.util.Log;
 
 import com.parse.FindCallback;
 import com.parse.ParseException;
-import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
+import com.totspot.uselessreviews.adapter.FeedItemListViewAdapter;
 
 public class DataModel {
 	private static final String LOG_TAG = "DataModel";
@@ -20,8 +20,8 @@ public class DataModel {
 	// The user of the app.
 	private ParseUser me;
 	
-	// The feed items to display to the user.
-	private List<ParseObject> feedItems;
+	// The adapter that keeps our data.
+	private FeedItemListViewAdapter mListAdapter;
 		
 	/**
 	 * Private constructor for this singleton.
@@ -60,10 +60,12 @@ public class DataModel {
 			}
 	    };
 	    task.execute();
-	    
-	    refreshFeedItems();
 	}
 	
+	/**
+	 * Fetch a fresh list of feed items from the server and update the adapter 
+	 * with the data that is received.
+	 */
 	public void refreshFeedItems() {
 	    // Let's now fetch part of the feed from the server.
 	    ParseQuery<ParseObject> query = ParseQuery.getQuery("FeedItem");
@@ -75,7 +77,9 @@ public class DataModel {
 			@Override
 			public void done(List<ParseObject> feedItemPOs, ParseException arg1) {
 				Log.i(LOG_TAG, "Fetched " + feedItemPOs.size() + " records for feed items");
-				feedItems = feedItemPOs;
+				for (ParseObject po: feedItemPOs) {
+					mListAdapter.add(po);
+				}
 				
 //				for (ParseObject po: feedItems) {
 //					try {
@@ -89,10 +93,16 @@ public class DataModel {
 //					}
 //				}
 				
-				Log.d(LOG_TAG, "Feed items: " + feedItems);
+				Log.d(LOG_TAG, "Feed items: " + feedItemPOs);
 			}
 		});
-	    
-	    
+	}
+
+	public void setListAdapter(FeedItemListViewAdapter listAdapter) {
+		mListAdapter = listAdapter;
+	}
+
+	public ParseObject getFeedItemById(String id) {
+		return mListAdapter.getObjectById(id);
 	}
 }

@@ -1,4 +1,4 @@
-package com.totspot.uselessreviews.data;
+package com.mishga.uselessreviews.data;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Random;
@@ -16,8 +16,8 @@ import com.parse.ParseObject;
 import com.parse.ParseRelation;
 import com.parse.ParseUser;
 import com.parse.RefreshCallback;
-import com.totspot.uselessreviews.R;
-import com.totspot.uselessreviews.UselessReviewsApplication;
+import com.mishga.uselessreviews.R;
+import com.mishga.uselessreviews.UselessReviewsApplication;
 
 public class DummyContentCreator {
 	private static final String LOG_TAG = "DummyContentCreator";

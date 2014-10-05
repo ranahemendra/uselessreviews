@@ -1,4 +1,4 @@
-package com.totspot.uselessreviews.data;
+package com.mishga.uselessreviews.data;
 
 import android.graphics.Bitmap;
 

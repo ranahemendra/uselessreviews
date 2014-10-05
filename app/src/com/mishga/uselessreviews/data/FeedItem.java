@@ -1,4 +1,4 @@
-package com.totspot.uselessreviews.data;
+package com.mishga.uselessreviews.data;
 
 
 public class FeedItem {

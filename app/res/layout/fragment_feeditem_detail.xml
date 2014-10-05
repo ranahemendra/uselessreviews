@@ -49,7 +49,7 @@
     
     <fragment
         android:id="@+id/feeditem_list"
-        android:name="com.totspot.uselessreviews.ItemCommentsListFragment"
+        android:name="com.mishga.uselessreviews.ItemCommentsListFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginLeft="16dp"

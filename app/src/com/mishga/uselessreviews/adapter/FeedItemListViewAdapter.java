@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.totspot.uselessreviews.adapter;
+package com.mishga.uselessreviews.adapter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,10 +44,10 @@ import android.widget.RatingBar.OnRatingBarChangeListener;
 import android.widget.TextView;
 
 import com.parse.ParseObject;
-import com.totspot.uselessreviews.R;
-import com.totspot.uselessreviews.data.DataModel;
-import com.totspot.uselessreviews.data.FeedItem;
-import com.totspot.uselessreviews.data.GetPicutreCallback;
+import com.mishga.uselessreviews.R;
+import com.mishga.uselessreviews.data.DataModel;
+import com.mishga.uselessreviews.data.FeedItem;
+import com.mishga.uselessreviews.data.GetPicutreCallback;
 
 /**
  * A concrete BaseAdapter that is backed by an array of arbitrary

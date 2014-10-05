@@ -1,10 +1,11 @@
-package com.totspot.uselessreviews;
+package com.mishga.uselessreviews;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.app.Activity;
 
 import android.view.MenuItem;
+import com.mishga.uselessreviews.R;
 
 
 /**

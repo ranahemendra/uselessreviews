@@ -1,4 +1,4 @@
-package com.totspot.uselessreviews;
+package com.mishga.uselessreviews;
 
 import android.app.Fragment;
 import android.graphics.Bitmap;
@@ -14,11 +14,12 @@ import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
+import com.mishga.uselessreviews.R;
+import com.mishga.uselessreviews.adapter.FeedItemRatingChangeListener;
+import com.mishga.uselessreviews.data.DataModel;
+import com.mishga.uselessreviews.data.FeedItem;
+import com.mishga.uselessreviews.data.GetPicutreCallback;
 import com.parse.ParseObject;
-import com.totspot.uselessreviews.adapter.FeedItemRatingChangeListener;
-import com.totspot.uselessreviews.data.DataModel;
-import com.totspot.uselessreviews.data.FeedItem;
-import com.totspot.uselessreviews.data.GetPicutreCallback;
 
 /**
  * A fragment representing a single FeedItem detail screen.

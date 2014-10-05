@@ -1,4 +1,4 @@
-package com.totspot.uselessreviews.data;
+package com.mishga.uselessreviews.data;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +9,8 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.mishga.uselessreviews.LoginListener;
+import com.mishga.uselessreviews.adapter.FeedItemListViewAdapter;
 import com.parse.FindCallback;
 import com.parse.GetCallback;
 import com.parse.GetDataCallback;
@@ -18,8 +20,6 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseRelation;
 import com.parse.ParseUser;
-import com.totspot.uselessreviews.LoginListener;
-import com.totspot.uselessreviews.adapter.FeedItemListViewAdapter;
 
 public class DataModel {
 	private static final String LOG_TAG = "DataModel";

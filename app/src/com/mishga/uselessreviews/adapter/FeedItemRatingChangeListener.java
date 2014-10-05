@@ -1,4 +1,4 @@
-package com.totspot.uselessreviews.adapter;
+package com.mishga.uselessreviews.adapter;
 
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -7,9 +7,9 @@ import android.util.Log;
 import android.widget.RatingBar;
 import android.widget.RatingBar.OnRatingBarChangeListener;
 
+import com.mishga.uselessreviews.data.DataModel;
+import com.mishga.uselessreviews.data.FeedItem;
 import com.parse.ParseObject;
-import com.totspot.uselessreviews.data.DataModel;
-import com.totspot.uselessreviews.data.FeedItem;
 
 public class FeedItemRatingChangeListener implements OnRatingBarChangeListener {
 	private static final String LOG_TAG = "FeedItemRatingChangeListener";

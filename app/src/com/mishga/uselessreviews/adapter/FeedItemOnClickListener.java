@@ -1,12 +1,12 @@
-package com.totspot.uselessreviews.adapter;
+package com.mishga.uselessreviews.adapter;
 
 import android.view.View;
 import android.view.View.OnClickListener;
 
 import com.parse.ParseObject;
-import com.totspot.uselessreviews.FeedItemListActivity;
-import com.totspot.uselessreviews.FeedItemListFragment;
-import com.totspot.uselessreviews.R;
+import com.mishga.uselessreviews.FeedItemListActivity;
+import com.mishga.uselessreviews.FeedItemListFragment;
+import com.mishga.uselessreviews.R;
 
 public class FeedItemOnClickListener implements OnClickListener {
 	private ParseObject mFeedItem;

@@ -1,4 +1,4 @@
-package com.totspot.uselessreviews;
+package com.mishga.uselessreviews;
 
 import android.app.Application;
 import android.content.Context;

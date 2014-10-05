@@ -1,16 +1,17 @@
-package com.totspot.uselessreviews;
+package com.mishga.uselessreviews;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.mishga.uselessreviews.R;
+import com.mishga.uselessreviews.adapter.FeedItemListViewAdapter;
+import com.mishga.uselessreviews.data.DataModel;
+import com.mishga.uselessreviews.data.DummyContentCreator;
 import com.parse.Parse;
 import com.parse.ParseException;
 import com.parse.ParseObject;
-import com.totspot.uselessreviews.adapter.FeedItemListViewAdapter;
-import com.totspot.uselessreviews.data.DataModel;
-import com.totspot.uselessreviews.data.DummyContentCreator;
 
 /**
  * An activity representing a list of FeedItems. This activity

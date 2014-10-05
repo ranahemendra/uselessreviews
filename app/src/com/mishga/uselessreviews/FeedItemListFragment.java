@@ -1,4 +1,4 @@
-package com.totspot.uselessreviews;
+package com.mishga.uselessreviews;
 
 import android.app.Activity;
 import android.app.ListFragment;
@@ -6,8 +6,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ListView;
 
+import com.mishga.uselessreviews.adapter.FeedItemListViewAdapter;
 import com.parse.ParseObject;
-import com.totspot.uselessreviews.adapter.FeedItemListViewAdapter;
 
 /**
  * A list fragment representing a list of FeedItems. This fragment

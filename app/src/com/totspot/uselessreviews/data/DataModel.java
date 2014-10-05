@@ -1,6 +1,8 @@
 package com.totspot.uselessreviews.data;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,7 +15,9 @@ import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.parse.ParseRelation;
 import com.parse.ParseUser;
+import com.totspot.uselessreviews.LoginListener;
 import com.totspot.uselessreviews.adapter.FeedItemListViewAdapter;
 
 public class DataModel {
@@ -26,12 +30,14 @@ public class DataModel {
 	
 	// The adapter that keeps our data.
 	private FeedItemListViewAdapter mListAdapter;
+	
+	private Map<String, ParseObject> mRatings;
 		
 	/**
 	 * Private constructor for this singleton.
 	 */
 	private DataModel() {
-		init();
+		mRatings = new HashMap<String, ParseObject>();
 	}
 	
 	/**
@@ -46,20 +52,24 @@ public class DataModel {
 		return sInstance;
 	}
 	
-	/**
-	 * Initialized the data model.
-	 */
-	private void init() {
-		// TODO: Get rid of this code once you have enough feed items.
+	public void login(final String username, final String password, final LoginListener listener) {
+		
 		// Do in the background.
 		AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
 			@Override
 			protected Void doInBackground(Void... params) {
-				me = DummyContentCreator.getMe();
-				Log.d(LOG_TAG, "Logged in as " + me.getUsername());
+				Log.i(LOG_TAG, "Trying to log in as " + username);
+				try {
+					ParseUser.logIn(username, password);
+				} catch (ParseException e) {
+					Log.e(LOG_TAG, "Failed to log in as " + username, e);
+					listener.failed(e);
+					return null;
+				}
 				
-				DummyContentCreator.createDummyContent();
-				
+				me = ParseUser.getCurrentUser();
+				Log.i(LOG_TAG, "Successfully logged in as " + username);
+				listener.success();
 				return null;
 			}
 	    };
@@ -72,8 +82,8 @@ public class DataModel {
 	 */
 	public void refreshFeedItems() {
 	    // Let's now fetch part of the feed from the server.
-	    ParseQuery<ParseObject> query = ParseQuery.getQuery("FeedItem");
-	    query.addDescendingOrder("createdAt");
+	    ParseQuery<ParseObject> query = ParseQuery.getQuery(FeedItem.OBJECT_NAME);
+	    query.addDescendingOrder(FeedItem.CREATED_AT);
 	    
 	    Log.d(LOG_TAG, "Fetching feed item list.");
 	    query.findInBackground(new FindCallback<ParseObject>() {
@@ -85,6 +95,7 @@ public class DataModel {
 					mListAdapter.remove(po);
 					mListAdapter.add(po);
 				}
+				Log.d(LOG_TAG, "Feed items: " + feedItems);
 				
 				Log.d(LOG_TAG, "Starting to fetch pictures for " + feedItems.size() + " feed items.");
 
@@ -115,7 +126,31 @@ public class DataModel {
 					});
 				}
 				
-				Log.d(LOG_TAG, "Feed items: " + feedItems);
+				// Fetch the ratings that the logged in user has applied.
+			    ParseQuery<ParseObject> query = ParseQuery.getQuery(UserRating.OBJECT_NAME);
+			    query.whereEqualTo(UserRating.RATER, getLoggedInUser());
+
+			    Log.d(LOG_TAG, "Fetching ratings by " + getLoggedInUser().getUsername());
+			    query.findInBackground(new FindCallback<ParseObject>() {
+
+					@Override
+					public void done(List<ParseObject> userRatings, ParseException arg1) {
+						Log.i(LOG_TAG, "Fetched " + userRatings.size() + " records for user ratings for " + 
+								getLoggedInUser().getUsername());
+						for (ParseObject po: userRatings) {
+							ParseRelation<ParseObject> relation = po.getRelation(UserRating.RATED_FEED_ITEM);
+							ParseQuery<ParseObject> query = relation.getQuery();
+							ParseObject feedItem;
+							try {
+								feedItem = query.getFirst();
+								mRatings.put(feedItem.getObjectId(), po);
+							} catch (ParseException e) {
+								Log.e(LOG_TAG, e.getMessage(), e);
+							}
+						}
+					}
+			    	
+			    });
 			}
 		});
 	}
@@ -153,5 +188,54 @@ public class DataModel {
 
 			}
 		});
+	}
+
+	public ParseUser getLoggedInUser() {
+		return me;
+	}
+
+	public boolean loggedInUserHasRated(ParseObject item) {
+		return (mRatings.get(item.getObjectId()) != null);
+	}
+
+	public float getUserRating(ParseObject item) {
+		ParseObject userRating = mRatings.get(item.getObjectId());
+		if (userRating == null) {
+			return -1f;
+		}
+		
+		return (float) userRating.getDouble(UserRating.RATING);
+	}
+
+	public void setUserRating(ParseObject item, float rating) {
+		if (loggedInUserHasRated(item)) {
+			ParseObject userRating = mRatings.get(item.getObjectId());
+			double oldRating = userRating.getDouble(UserRating.RATING); 
+			userRating.put(UserRating.RATING, rating);
+			userRating.saveInBackground();
+			
+			int ratingCount = item.getInt(FeedItem.RATING_COUNT);
+			double aggregateRating = item.getDouble(FeedItem.AGGREGATE_RATING);		
+			aggregateRating = ((aggregateRating * ratingCount) + rating - oldRating) / ratingCount;
+			item.put(FeedItem.AGGREGATE_RATING, aggregateRating);
+			item.saveInBackground();
+		} else {
+			final ParseObject userRating = new ParseObject(UserRating.OBJECT_NAME);
+
+			ParseRelation<ParseUser> relation = userRating.getRelation(UserRating.RATER);
+			relation.add(DataModel.getInstance().getLoggedInUser());
+			ParseRelation<ParseObject> ratedItemRelation = userRating.getRelation(UserRating.RATED_FEED_ITEM);
+			ratedItemRelation.add(item);		
+			userRating.put(UserRating.RATING, rating);
+			userRating.saveInBackground();
+			mRatings.put(item.getObjectId(), userRating);
+
+			int ratingCount = item.getInt(FeedItem.RATING_COUNT);
+			double aggregateRating = item.getDouble(FeedItem.AGGREGATE_RATING);		
+			aggregateRating = ((aggregateRating * ratingCount) + rating) / ++ratingCount;
+			item.put(FeedItem.AGGREGATE_RATING, aggregateRating);
+			item.put(FeedItem.RATING_COUNT, ratingCount);
+			item.saveInBackground();
+		}
 	}
 }

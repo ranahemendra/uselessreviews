@@ -2,13 +2,16 @@ package com.totspot.uselessreviews;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.parse.Parse;
+import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.totspot.uselessreviews.adapter.FeedItemListViewAdapter;
 import com.totspot.uselessreviews.data.DataModel;
+import com.totspot.uselessreviews.data.DummyContentCreator;
 
 /**
  * An activity representing a list of FeedItems. This activity
@@ -72,13 +75,42 @@ public class FeedItemListActivity extends Activity
 //		});
         
         Log.d(LOG_TAG, "Initializing the data model.");
-        DataModel dataModel = DataModel.getInstance();
+        final DataModel dataModel = DataModel.getInstance();
         dataModel.setListAdapter((FeedItemListViewAdapter) listFragment.getListAdapter());
-        dataModel.refreshFeedItems();
         
+    	// TODO: THIS SHOULDN'T BE HAPPENING. FIX ME!!!!!
+        if (dataModel.getLoggedInUser() == null) {
+
+        	final String[] userAndPwd = DummyContentCreator.getCurrentUserAndPassword();
+        	dataModel.login(userAndPwd[0], userAndPwd[1], new LoginListener() {
+
+        		@Override
+        		public void success() {
+        			// TODO: Get rid of this call below in the final version.
+        			Log.d(LOG_TAG, "Now creating dummy record...");
+        			DummyContentCreator.initDummyDataInBackground();
+
+        			// Loading data from the server in the background.
+        			dataModel.refreshFeedItems();
+        		}
+
+        		@Override
+        		public void failed(ParseException e) {
+        			Log.e(LOG_TAG, "Unable to login user " + userAndPwd[0] + " with password " + 
+        					userAndPwd[1], e);
+        		}
+
+        	});
+        	
+        } else {
+
+        	// Loading data from the server in the background.
+			dataModel.refreshFeedItems();
+        	
+        }
         // TODO: If exposing deep links into your app, handle intents here.
     }
-
+    
     /**
      * Callback method from {@link FeedItemListFragment.Callbacks}
      * indicating that the item with the given ID was selected.

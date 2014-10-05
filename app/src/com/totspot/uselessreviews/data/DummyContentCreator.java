@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.parse.ParseException;
@@ -37,41 +38,46 @@ public class DummyContentCreator {
 	private static final String PASSWORD = "foo";
 	private static Random rand = new Random();
 	
-	private static ParseUser me;
-
 	private static byte[] sPicture;
 	
-	public synchronized static ParseUser getMe() {
-		if (me != null) {
-			return me;
-		}
+	public static String[] getCurrentUserAndPassword() {
+		String[] userAndPassword = new String[2];
 		
 		int index = getRandomIndex(USERNAMES.length);
 		String username = USERNAMES[index];
-		Log.d(LOG_TAG, "Me is " + username);
+		Log.d(LOG_TAG, "Username is " + username);
+		userAndPassword[0] = username;
+		userAndPassword[1] = PASSWORD;
 		
-		try {
-			ParseUser.logIn(username, PASSWORD);
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			Log.e(LOG_TAG, e.getMessage(), e);
-		}
-		
-		me = ParseUser.getCurrentUser();
-		return me;
+		return userAndPassword;
+	}
+	
+	/**
+	 * Initialized the data model.
+	 */
+	public static void initDummyDataInBackground() {
+		// Do in the background.
+		AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
+			@Override
+			protected Void doInBackground(Void... params) {
+				DummyContentCreator.createDummyContent();
+				return null;
+			}
+	    };
+	    task.execute();
 	}
 	
 	public static void createDummyContent() {
 		final ParseObject feed = new ParseObject("FeedItem");
 		ParseRelation<ParseUser> relation = feed.getRelation("user");
-		relation.add(me);
+		relation.add(DataModel.getInstance().getLoggedInUser());
 		feed.put(FeedItem.TITLE, "Title " + System.currentTimeMillis());
 		feed.put(FeedItem.DESCRIPTION, System.currentTimeMillis() + "Lorem ipsum dolor sit amet, " +
 				"consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et " +
 				"dolore magna aliqua.");
 		ParseFile file = new ParseFile(getPicture());
 		feed.put(FeedItem.BIGPIC, file);
-		feed.put(FeedItem.AGGREGATE_RATING, getRandomRating());
+		feed.put(FeedItem.AGGREGATE_RATING, 0d);
 		feed.put(FeedItem.RATING_COUNT, 0);
 
 		try {

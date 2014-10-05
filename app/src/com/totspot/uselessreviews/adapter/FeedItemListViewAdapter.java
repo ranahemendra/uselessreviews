@@ -27,7 +27,9 @@ import java.util.Random;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.LayerDrawable;
 import android.util.Log;
 import android.util.LruCache;
 import android.view.LayoutInflater;
@@ -38,12 +40,12 @@ import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.RatingBar;
+import android.widget.RatingBar.OnRatingBarChangeListener;
 import android.widget.TextView;
 
 import com.parse.ParseObject;
 import com.totspot.uselessreviews.R;
 import com.totspot.uselessreviews.data.DataModel;
-import com.totspot.uselessreviews.data.DummyContentCreator;
 import com.totspot.uselessreviews.data.FeedItem;
 import com.totspot.uselessreviews.data.GetPicutreCallback;
 
@@ -413,26 +415,53 @@ public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
         ImageView image = (ImageView) view.findViewById(R.id.image);
         TextView title = (TextView) view.findViewById(R.id.title);
 
-        ParseObject item = getItem(position);
+        final ParseObject item = getItem(position);
+        ratingBar.setOnRatingBarChangeListener(new OnRatingBarChangeListener() {
+			
+			@Override
+			public void onRatingChanged(RatingBar ratingBar, float rating,
+					boolean fromUser) {
+				if (!fromUser) {
+					return;
+				}
+				 
+				Log.d(LOG_TAG, "Rating " + rating + " given to item " + item.getString(FeedItem.TITLE));
+		    	LayerDrawable stars = (LayerDrawable) ratingBar.getProgressDrawable();
+	        	stars.getDrawable(2).setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_ATOP);
+	        	
+	        	DataModel.getInstance().setUserRating(item, rating);
+			}
+		});
         
         // Set the image, if one exists.
         Bitmap bm = getImageForItem(item);
         if (bm != null) {
-//        Bitmap bm = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
         	image.setImageBitmap(bm);
         }
         
-        float aggrRating = (float) item.getDouble(FeedItem.AGGREGATE_RATING);
-        ratingBar.setRating(aggrRating);  
-//        if (aggrRating > 3) {
-//        	LayerDrawable stars = (LayerDrawable) ratingBar.getProgressDrawable();
-//        	stars.getDrawable(2).setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_ATOP);
-//        }
+        
+    	LayerDrawable stars = (LayerDrawable) ratingBar.getProgressDrawable();
+    	Log.d(LOG_TAG, "Checking if user " + DataModel.getInstance().getLoggedInUser().getUsername() + 
+    			" has rated item " + item.getString(FeedItem.TITLE));
+        if (DataModel.getInstance().loggedInUserHasRated(item)) {
+        	stars.getDrawable(2).setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_ATOP);
+            float userRating = DataModel.getInstance().getUserRating(item);
+            if (userRating < 0) {
+            	Log.e(LOG_TAG, "WHAT THE HECK!!!");
+            	userRating = 0; 
+            }
+            ratingBar.setRating(userRating); 
+        } else {
+        	stars.getDrawable(2).setColorFilter(Color.CYAN, PorterDuff.Mode.SRC_ATOP);
+            float aggrRating = (float) item.getDouble(FeedItem.AGGREGATE_RATING);
+            ratingBar.setRating(aggrRating); 
+        }
+
         title.setText(item.getString(FeedItem.TITLE));
 
         return view;
     }
-
+    
 	/**
      * <p>Sets the layout resource to create the drop down views.</p>
      *

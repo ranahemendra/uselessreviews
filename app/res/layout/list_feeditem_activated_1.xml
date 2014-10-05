@@ -10,7 +10,6 @@
         android:layout_height="wrap_content"
         android:numStars="5"
         android:rating="2.0"
-        android:isIndicator="true"
         android:stepSize="1.0" />
 
 	<ImageView

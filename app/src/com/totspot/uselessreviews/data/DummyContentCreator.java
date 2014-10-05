@@ -14,6 +14,7 @@ import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseRelation;
 import com.parse.ParseUser;
+import com.parse.RefreshCallback;
 import com.totspot.uselessreviews.R;
 import com.totspot.uselessreviews.UselessReviewsApplication;
 
@@ -21,7 +22,20 @@ public class DummyContentCreator {
 	private static final String LOG_TAG = "DummyContentCreator";
 	
 	private static final String[] USERNAMES = new String[] {"vikrant", "vijay", "hemendra", "pascal"};
+	private static final int[] RESOURCE_IDS = new int[] {
+		R.drawable.car1,
+		R.drawable.car2,
+		R.drawable.car3,
+		R.drawable.car4,
+		R.drawable.car5,
+		R.drawable.car6,
+		R.drawable.car7,
+		R.drawable.car8,
+		R.drawable.car9,
+		R.drawable.car10
+	};
 	private static final String PASSWORD = "foo";
+	private static Random rand = new Random();
 	
 	private static ParseUser me;
 
@@ -32,7 +46,7 @@ public class DummyContentCreator {
 			return me;
 		}
 		
-		int index = getRandomIndex();
+		int index = getRandomIndex(USERNAMES.length);
 		String username = USERNAMES[index];
 		Log.d(LOG_TAG, "Me is " + username);
 		
@@ -66,6 +80,9 @@ public class DummyContentCreator {
 			// TODO Auto-generated catch block
 			Log.e(LOG_TAG, e.getMessage(), e);
 		}
+		
+		// After saving, refresh the data model.
+		// DataModel.getInstance().refreshFeedItems();
 	}
 	
 	private static float getRandomRating() {
@@ -77,18 +94,17 @@ public class DummyContentCreator {
 	}
 
 	// Private utility methods.
-	private static int getRandomIndex() {
-		Random rand = new Random();
-		return rand.nextInt(USERNAMES.length);
+	private static int getRandomIndex(int length) {
+		return rand.nextInt(length);
 	}
 		
 	public static byte[] getPicture() {
 		if (sPicture != null) {
-			return sPicture;
+			return sPicture; 
 		}
 		
 		Resources res = getContext().getResources();
-		int id = R.drawable.car;
+		int id = RESOURCE_IDS[getRandomIndex(RESOURCE_IDS.length)];
 		Bitmap b = BitmapFactory.decodeResource(res, id);
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		b.compress(Bitmap.CompressFormat.PNG, 100, stream);

@@ -2,11 +2,15 @@ package com.totspot.uselessreviews.data;
 
 import java.util.List;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 
 import com.parse.FindCallback;
+import com.parse.GetDataCallback;
 import com.parse.ParseException;
+import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
@@ -75,25 +79,43 @@ public class DataModel {
 	    query.findInBackground(new FindCallback<ParseObject>() {
 			
 			@Override
-			public void done(List<ParseObject> feedItemPOs, ParseException arg1) {
-				Log.i(LOG_TAG, "Fetched " + feedItemPOs.size() + " records for feed items");
-				for (ParseObject po: feedItemPOs) {
+			public void done(List<ParseObject> feedItems, ParseException arg1) {
+				Log.i(LOG_TAG, "Fetched " + feedItems.size() + " records for feed items");
+				for (ParseObject po: feedItems) {
+					mListAdapter.remove(po);
 					mListAdapter.add(po);
 				}
 				
-//				for (ParseObject po: feedItems) {
-//					try {
-//						ParseFile bigPic = (ParseFile) po.get(FeedItem.BIGPIC);
-//						byte[] data;
-//						data = bigPic.getData();
-//						Log.d(LOG_TAG, "Pulled a picture of size " + data.length + 
-//								" for feed item with id " + po.getObjectId());
-//					} catch (ParseException e) {
-//						Log.e(LOG_TAG, e.getMessage(), e);
-//					}
-//				}
+				Log.d(LOG_TAG, "Starting to fetch pictures for " + feedItems.size() + " feed items.");
+
+				int count = 0;
+				for (ParseObject po: feedItems) {
+					if (count == FeedItemListViewAdapter.MAX_PICTURES_TO_FETCH_IN_ONE_SHOT) {
+						// We have loaded enough items in memory, let's stop pulling more data.
+						break;
+					}
+					
+					count++;
+					final int thisCount = count;
+					final ParseObject thisPO = po;
+					fetchPictureForFeedItem(po, new GetPicutreCallback() {
+
+						@Override
+						public void done(Bitmap bitmap) {
+							// Do nothing.
+							if (bitmap == null) {
+								Log.d(LOG_TAG, "Item " + thisCount + " of id " + thisPO.getObjectId() +  
+										" and title " + thisPO.getString(FeedItem.TITLE) + 
+										" didn't have an associated picture");	
+							} else {
+								Log.d(LOG_TAG, "Pulled a picture for item " + thisCount + " of size " + 
+										bitmap.getByteCount() + " for feed item with id " + thisPO.getObjectId());
+							}
+						}
+					});
+				}
 				
-				Log.d(LOG_TAG, "Feed items: " + feedItemPOs);
+				Log.d(LOG_TAG, "Feed items: " + feedItems);
 			}
 		});
 	}
@@ -104,5 +126,32 @@ public class DataModel {
 
 	public ParseObject getFeedItemById(String id) {
 		return mListAdapter.getObjectById(id);
+	}
+	
+	public void fetchPictureForFeedItem(ParseObject po, GetPicutreCallback callback) {
+		Bitmap picture = mListAdapter.getPictureById(po.getObjectId());
+		if (picture == null) {
+			fetchAndCachePicture(po, callback);
+		} else {
+			callback.done(picture);
+		}
+	}
+
+	private void fetchAndCachePicture(final ParseObject po, final GetPicutreCallback callback) {
+		ParseFile bigPic = (ParseFile) po.get(FeedItem.BIGPIC);
+		bigPic.getDataInBackground(new GetDataCallback() {
+
+			@Override
+			public void done(byte[] data, ParseException arg1) {
+				if (data != null && data.length != 0) {
+					Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+					mListAdapter.addPicture(po, bitmap);
+					callback.done(bitmap);
+				} else {
+					callback.done(null);
+				}
+
+			}
+		});
 	}
 }

@@ -28,8 +28,8 @@ import java.util.Random;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
+import android.util.Log;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,8 +42,10 @@ import android.widget.TextView;
 
 import com.parse.ParseObject;
 import com.totspot.uselessreviews.R;
+import com.totspot.uselessreviews.data.DataModel;
 import com.totspot.uselessreviews.data.DummyContentCreator;
 import com.totspot.uselessreviews.data.FeedItem;
+import com.totspot.uselessreviews.data.GetPicutreCallback;
 
 /**
  * A concrete BaseAdapter that is backed by an array of arbitrary
@@ -61,6 +63,10 @@ import com.totspot.uselessreviews.data.FeedItem;
  * override {@link #getView(int, View, ViewGroup)} to return the type of view you want.
  */
 public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
+	private static final String LOG_TAG = "FeedItemListViewAdapter";
+
+	public static int MAX_PICTURES_TO_FETCH_IN_ONE_SHOT = 10;
+
     /**
      * Contains the list of objects that represent the data of this ArrayAdapter.
      * The content of this list is referred to as "the array" in the documentation.
@@ -68,6 +74,16 @@ public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
     private List<ParseObject> mObjects;
     
     private Map<String, ParseObject> mOriginalValuesMap;
+    
+    private LruCache<String, Bitmap> mFeedPicturesCache;
+    
+    // Get max available VM memory, exceeding this amount will throw an
+    // OutOfMemory exception. Stored in kilobytes as LruCache takes an
+    // int in its constructor.
+    final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+
+    // Use 1/8th of the available memory for this memory cache.
+    final int cacheSize = maxMemory / 8;    
         
     /**
      * Lock used to modify the content of {@link #mObjects}. Any write operation
@@ -142,12 +158,36 @@ public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
             } else {
                 mObjects.add(object);
                 mOriginalValuesMap.put(object.getObjectId(), object);
+//                if (mFeedPictures.size() <= 10 && mPendingPictureFetches <= 10) {
+//                	fetchPicture(object);
+//                }
             }
         }
         if (mNotifyOnChange) notifyDataSetChanged();
     }
+//
+//    private synchronized void fetchPicture(final ParseObject po) {
+//    	mPendingPictureFetches++;
+//		ParseFile file = po.getParseFile(FeedItem.BIGPIC);
+//		file.getDataInBackground(new GetDataCallback() {
+//			
+//			@Override
+//			public void done(byte[] data, ParseException arg1) {
+//				if (data != null) {
+//					mFeedPictures.put(po.getObjectId(), data);
+//				}
+//				
+//				synchronized (FeedItemListViewAdapter.this) {
+//					mPendingPictureFetches--;
+//				}
+//			}
+//		});
+//		
+//
+//		
+//	}
 
-    /**
+	/**
      * Adds the specified Collection at the end of the array.
      *
      * @param collection The Collection to add at the end of the array.
@@ -314,8 +354,23 @@ public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
         return mObjects.get(position);
     }
     
-    private byte[] getImageForItem(int position) {
-    	return DummyContentCreator.getPicture();
+    private Bitmap getImageForItem(ParseObject po) {
+    	Bitmap image = mFeedPicturesCache.get(po.getObjectId());
+    	
+    	if (image == null) {
+    		DataModel.getInstance().fetchPictureForFeedItem(po, new GetPicutreCallback() {
+				
+				@Override
+				public void done(Bitmap bitmap) {
+					// TODO Update the cell with the image in the view.
+					if (bitmap != null && mNotifyOnChange) {
+						notifyDataSetChanged();
+					}
+				}
+			});
+    	}
+    	
+    	return image;
 	}
 
     /**
@@ -354,19 +409,25 @@ public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
             view = convertView;
         }
 
-//        RatingBar ratingBar = (RatingBar) view.findViewById(R.id.ratingBar);
+        RatingBar ratingBar = (RatingBar) view.findViewById(R.id.ratingBar);
         ImageView image = (ImageView) view.findViewById(R.id.image);
         TextView title = (TextView) view.findViewById(R.id.title);
 
         ParseObject item = getItem(position);
         
         // Set the image, if one exists.
-        byte[] imageBytes = getImageForItem(position);
-        Bitmap bm = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-        image.setImageBitmap(bm);
+        Bitmap bm = getImageForItem(item);
+        if (bm != null) {
+//        Bitmap bm = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+        	image.setImageBitmap(bm);
+        }
         
         float aggrRating = (float) item.getDouble(FeedItem.AGGREGATE_RATING);
-//        ratingBar.setRating(aggrRating);        
+        ratingBar.setRating(aggrRating);  
+//        if (aggrRating > 3) {
+//        	LayerDrawable stars = (LayerDrawable) ratingBar.getProgressDrawable();
+//        	stars.getDrawable(2).setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_ATOP);
+//        }
         title.setText(item.getString(FeedItem.TITLE));
 
         return view;
@@ -476,5 +537,47 @@ public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
     
 	public ParseObject getObjectById(String id) {
 		return mOriginalValuesMap.get(id);
+	}
+
+	public void addPicture(ParseObject po, Bitmap bitmap) {
+		initLruCacheIfNeeded();
+		
+		if (getBitmapFromMemCache(po.getObjectId()) == null) {
+			Log.d(LOG_TAG , "Adding a picture for feed item " + po.getObjectId() + ". Picture size: " + 
+					bitmap.getByteCount());
+	        mFeedPicturesCache.put(po.getObjectId(), bitmap);
+	    } else {
+			Log.d(LOG_TAG , "We already have picture for " + po.getObjectId() + ". Ignoring request " +
+					"to add picture to the cache.");
+	    }
+	}
+	
+	private synchronized void initLruCacheIfNeeded() {
+		if (mFeedPicturesCache == null) {
+			Log.d(LOG_TAG , "Creating LRU cache for images of size " + cacheSize);
+			mFeedPicturesCache = new LruCache<String, Bitmap>(cacheSize) {
+		        @Override
+		        protected int sizeOf(String key, Bitmap bitmap) {
+		            // The cache size will be measured in kilobytes rather than
+		            // number of items.
+		            return bitmap.getByteCount() / 1024;
+		        }
+		    };
+		}
+	}
+
+	public Bitmap getBitmapFromMemCache(String key) {
+		initLruCacheIfNeeded();
+	    return mFeedPicturesCache.get(key);
+	}
+	
+	public boolean isLruCacheNearlyFull() {
+		initLruCacheIfNeeded();
+		return (mFeedPicturesCache.size() >= cacheSize * 0.9);
+	}
+
+	public Bitmap getPictureById(String key) {
+		initLruCacheIfNeeded();
+		return mFeedPicturesCache.get(key);
 	}
 }

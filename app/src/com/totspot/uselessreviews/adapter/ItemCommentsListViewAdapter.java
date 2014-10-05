@@ -64,7 +64,7 @@ import com.totspot.uselessreviews.data.GetPicutreCallback;
  * or to have some of data besides toString() results fill the views,
  * override {@link #getView(int, View, ViewGroup)} to return the type of view you want.
  */
-public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
+public class ItemCommentsListViewAdapter extends BaseAdapter implements Filterable {
 	private static final String LOG_TAG = "FeedItemListViewAdapter";
 
 	public static int MAX_PICTURES_TO_FETCH_IN_ONE_SHOT = 10;
@@ -132,7 +132,7 @@ public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
      * @param resource The resource ID for a layout file containing a TextView to use when
      *                 instantiating views.
      */
-    public FeedItemListViewAdapter(Context context) {
+    public ItemCommentsListViewAdapter(Context context) {
         init(context, new ArrayList<ParseObject>());
     }
 
@@ -144,7 +144,7 @@ public class FeedItemListViewAdapter extends BaseAdapter implements Filterable {
      *                 instantiating views.
      * @param objects The objects to represent in the ListView.
      */
-    public FeedItemListViewAdapter(Context context, List<ParseObject> objects) {
+    public ItemCommentsListViewAdapter(Context context, List<ParseObject> objects) {
         init(context, objects);
     }
 

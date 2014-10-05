@@ -6,8 +6,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ListView;
 
-import com.parse.ParseObject;
-import com.totspot.uselessreviews.adapter.FeedItemListViewAdapter;
+import com.totspot.uselessreviews.FeedItemListFragment.Callbacks;
+import com.totspot.uselessreviews.adapter.ItemCommentsListViewAdapter;
 
 /**
  * A list fragment representing a list of FeedItems. This fragment
@@ -18,7 +18,7 @@ import com.totspot.uselessreviews.adapter.FeedItemListViewAdapter;
  * Activities containing this fragment MUST implement the {@link Callbacks}
  * interface.
  */
-public class FeedItemListFragment extends ListFragment {
+public class ItemCommentsListFragment extends ListFragment {
 
     /**
      * The serialization (saved instance state) Bundle key representing the
@@ -27,43 +27,15 @@ public class FeedItemListFragment extends ListFragment {
     private static final String STATE_ACTIVATED_POSITION = "activated_position";
 
     /**
-     * The fragment's current callback object, which is notified of list item
-     * clicks.
-     */
-    private Callbacks mCallbacks = sDummyCallbacks;
-
-    /**
      * The current activated item position. Only used on tablets.
      */
     private int mActivatedPosition = ListView.INVALID_POSITION;
 
     /**
-     * A callback interface that all activities containing this fragment must
-     * implement. This mechanism allows activities to be notified of item
-     * selections.
-     */
-    public interface Callbacks {
-        /**
-         * Callback for when an item has been selected.
-         */
-        public void onItemSelected(ParseObject obj);
-    }
-
-    /**
-     * A dummy implementation of the {@link Callbacks} interface that does
-     * nothing. Used only when this fragment is not attached to an activity.
-     */
-    private static Callbacks sDummyCallbacks = new Callbacks() {
-        @Override
-        public void onItemSelected(ParseObject obj) {
-        }
-    };
-
-    /**
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public FeedItemListFragment() {
+    public ItemCommentsListFragment() {
     }
 
     @Override
@@ -71,7 +43,7 @@ public class FeedItemListFragment extends ListFragment {
         super.onCreate(savedInstanceState);
 
         // TODO: replace with a real list adapter.
-        setListAdapter(new FeedItemListViewAdapter(getActivity())); 
+        setListAdapter(new ItemCommentsListViewAdapter(getActivity())); 
     }
 
     @Override
@@ -88,35 +60,11 @@ public class FeedItemListFragment extends ListFragment {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-
-        // Activities containing this fragment must implement its callbacks.
-        if (!(activity instanceof Callbacks)) {
-            throw new IllegalStateException("Activity must implement fragment's callbacks.");
-        }
-
-        mCallbacks = (Callbacks) activity;
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-
-        // Reset the active callbacks interface to the dummy implementation.
-        mCallbacks = sDummyCallbacks;
-    }
-
-    @Override
-    public void onListItemClick(ListView listView, View view, int position, long id) {
-        super.onListItemClick(listView, view, position, id);
-
-        // Notify the active callbacks interface (the activity, if the
-        // fragment is attached to one) that an item has been selected.
-        mCallbacks.onItemSelected((ParseObject) getListAdapter().getItem((position)));
-    }
-    
-    // Called by the adapter since onListItemClick doesn't get called when RatingBar is enabled.
-    public void onListItemClicked(ParseObject po) {
-    	mCallbacks.onItemSelected(po);
     }
 
     @Override

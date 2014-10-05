@@ -1,15 +1,24 @@
 package com.totspot.uselessreviews;
 
 import android.app.Fragment;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.parse.ParseObject;
+import com.totspot.uselessreviews.adapter.FeedItemRatingChangeListener;
 import com.totspot.uselessreviews.data.DataModel;
 import com.totspot.uselessreviews.data.FeedItem;
+import com.totspot.uselessreviews.data.GetPicutreCallback;
 
 /**
  * A fragment representing a single FeedItem detail screen.
@@ -18,6 +27,8 @@ import com.totspot.uselessreviews.data.FeedItem;
  * on handsets.
  */
 public class FeedItemDetailFragment extends Fragment {
+	private static final String LOG_TAG = "FeeditemDetailFragment";
+	
     /**
      * The fragment argument representing the item ID that this fragment
      * represents.
@@ -55,11 +66,51 @@ public class FeedItemDetailFragment extends Fragment {
 
         // Show the dummy content as text in a TextView.
         if (mFeedItem != null) {
-            ((TextView) rootView.findViewById(R.id.feeditem_detail_rating)).setText(mFeedItem.getDouble(FeedItem.AGGREGATE_RATING) + "");
-            ((TextView) rootView.findViewById(R.id.feeditem_detail_title)).setText(mFeedItem.getString(FeedItem.TITLE));
-            ((TextView) rootView.findViewById(R.id.feeditem_detail_description)).setText(mFeedItem.getString(FeedItem.DESCRIPTION));
+        	createViewFromResource(rootView, mFeedItem);
         }
 
         return rootView;
     }
+    
+    private void createViewFromResource(View rootView, ParseObject item) {
+    	
+    	((FeedItemDetailActivity) rootView.getContext()).getActionBar().setTitle(item.getString(FeedItem.TITLE));	
+        ((TextView) rootView.findViewById(R.id.feeditem_detail_description)).setText(mFeedItem.getString(FeedItem.DESCRIPTION));
+    	
+        RatingBar ratingBar = (RatingBar) rootView.findViewById(R.id.feeditem_detail_ratingBar);
+        ratingBar.setOnRatingBarChangeListener(new FeedItemRatingChangeListener(item));
+        updateRatingBar(item, ratingBar);
+
+        final ImageView image = (ImageView) rootView.findViewById(R.id.feeditem_detail_image);
+		DataModel.getInstance().fetchPictureForFeedItem(item, new GetPicutreCallback() {
+
+			@Override
+			public void done(Bitmap bitmap) {
+				// TODO Update the cell with the image in the view.
+				if (bitmap != null) {
+		        	image.setImageBitmap(bitmap);
+				}
+			}
+		});
+    }
+
+	private void updateRatingBar(ParseObject item, RatingBar ratingBar) {
+    	LayerDrawable stars = (LayerDrawable) ratingBar.getProgressDrawable();
+    	Log.d(LOG_TAG, "Checking if user " + DataModel.getInstance().getLoggedInUser().getUsername() + 
+    			" has rated item " + item.getString(FeedItem.TITLE));
+        if (DataModel.getInstance().loggedInUserHasRated(item)) {
+        	stars.getDrawable(2).setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_ATOP);
+            float userRating = DataModel.getInstance().getUserRating(item);
+            if (userRating < 0) {
+            	Log.e(LOG_TAG, "WHAT THE HECK!!!");
+            	userRating = 0; 
+            }
+            ratingBar.setRating(userRating); 
+        } else {
+        	stars.getDrawable(2).setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
+            float aggrRating = (float) item.getDouble(FeedItem.AGGREGATE_RATING);
+            ratingBar.setRating(aggrRating); 
+        }
+	}
+    
 }

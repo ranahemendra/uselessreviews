@@ -2,7 +2,6 @@ package com.totspot.uselessreviews;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -39,6 +38,8 @@ public class FeedItemListActivity extends Activity
      * device.
      */
     private boolean mTwoPane;
+    
+    private boolean firstTime = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,17 +64,6 @@ public class FeedItemListActivity extends Activity
             listFragment.setActivateOnItemClick(true);
         }
         
-//        ParseObject testObject = new ParseObject("TestObject");
-//        testObject.put("foo", "bar");
-//        testObject.saveInBackground(new SaveCallback() {
-//			
-//			@Override
-//			public void done(ParseException arg0) {
-//				// TODO Auto-generated method stub
-//		        Toast.makeText(FeedItemListActivity.this, "Saved in background", Toast.LENGTH_LONG).show();
-//			}
-//		});
-        
         Log.d(LOG_TAG, "Initializing the data model.");
         final DataModel dataModel = DataModel.getInstance();
         dataModel.setListAdapter((FeedItemListViewAdapter) listFragment.getListAdapter());
@@ -87,8 +77,8 @@ public class FeedItemListActivity extends Activity
         		@Override
         		public void success() {
         			// TODO: Get rid of this call below in the final version.
-        			Log.d(LOG_TAG, "Now creating dummy record...");
-        			DummyContentCreator.initDummyDataInBackground();
+//        			Log.d(LOG_TAG, "Now creating dummy record...");
+//        			DummyContentCreator.initDummyDataInBackground();
 
         			// Loading data from the server in the background.
         			dataModel.refreshFeedItems();
@@ -111,7 +101,24 @@ public class FeedItemListActivity extends Activity
         // TODO: If exposing deep links into your app, handle intents here.
     }
     
-    /**
+    @Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+		
+		if (firstTime) {
+			firstTime = false;
+			return;
+		}
+		
+		Log.d(LOG_TAG, "Activity resumed.");
+        FeedItemListFragment listFragment = (FeedItemListFragment) getFragmentManager()
+                .findFragmentById(R.id.feeditem_list);
+        FeedItemListViewAdapter adapter = (FeedItemListViewAdapter) listFragment.getListAdapter();
+        adapter.notifyDataSetChanged();
+	}
+
+	/**
      * Callback method from {@link FeedItemListFragment.Callbacks}
      * indicating that the item with the given ID was selected.
      */

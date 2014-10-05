@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.GetDataCallback;
 import com.parse.ParseException;
 import com.parse.ParseFile;
@@ -132,7 +133,7 @@ public class DataModel {
 
 			    Log.d(LOG_TAG, "Fetching ratings by " + getLoggedInUser().getUsername());
 			    query.findInBackground(new FindCallback<ParseObject>() {
-
+ 
 					@Override
 					public void done(List<ParseObject> userRatings, ParseException arg1) {
 						Log.i(LOG_TAG, "Fetched " + userRatings.size() + " records for user ratings for " + 
@@ -140,13 +141,15 @@ public class DataModel {
 						for (ParseObject po: userRatings) {
 							ParseRelation<ParseObject> relation = po.getRelation(UserRating.RATED_FEED_ITEM);
 							ParseQuery<ParseObject> query = relation.getQuery();
-							ParseObject feedItem;
-							try {
-								feedItem = query.getFirst();
-								mRatings.put(feedItem.getObjectId(), po);
-							} catch (ParseException e) {
-								Log.e(LOG_TAG, e.getMessage(), e);
-							}
+							final ParseObject finalPO = po;
+							query.getFirstInBackground(new GetCallback<ParseObject>() {
+
+								@Override
+								public void done(ParseObject feedItem, ParseException arg1) {
+									mRatings.put(feedItem.getObjectId(), finalPO);
+									mListAdapter.notifyDataSetChanged();
+								}
+							});
 						}
 					}
 			    	
